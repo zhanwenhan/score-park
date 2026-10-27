@@ -1,0 +1,17 @@
+{
+  "name": "家庭积分乐园",
+  "short_name": "积分乐园",
+  "description": "做任务赚积分 · 换奖励养习惯 —— 家庭小朋友操行积分小助手",
+  "lang": "zh-CN",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4ecdc",
+  "theme_color": "#4f7f52",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

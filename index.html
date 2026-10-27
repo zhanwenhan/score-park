@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>家庭积分乐园</title>
+  <!-- ============ PWA / iOS 主屏 Web App 支持 ============ -->
+  <meta name="theme-color" content="#4f7f52" />
+  <meta name="format-detection" content="telephone=no" />
+  <!-- 独立窗口（添加到主屏幕后无地址栏） -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <!-- 状态栏沉浸式：页面延伸到状态栏下方（配合 .is-standalone 顶栏样式） -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="积分乐园" />
+  <link rel="manifest" href="manifest.json" />
+  <!-- 浏览器标签页 / PWA 图标 -->
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <!-- Font Awesome 图标库（CDN，离线无网络时仅图标不显示，不影响功能） -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    /* ============================================================
+   家庭积分乐园 · 奶油暖色调卡片风
+   主题切换：body[data-theme="green"]（詹子孚）/ "blue"（许怀若）
+   ============================================================ */
+    :root {
+      --cream: #f4ecdc;
+      /* 页面奶油底色 */
+      --card: #fffdf8;
+      /* 卡片底色 */
+      --ink: #4a4438;
+      /* 主文字色 */
+      --ink-soft: #9a9183;
+      /* 次要文字色 */
+      --line: #efe6d4;
+      /* 分隔线 */
+      --radius: 20px;
+      --shadow: 0 6px 18px rgba(120, 100, 60, .10);
+
+      /* 主题色（默认绿色，切换用户时由 JS 覆盖） */
+      --theme: #4f7f52;
+      --theme-deep: #3d6640;
+      --theme-soft: #e8f1e6;
+      --theme-tint: rgba(79, 127, 82, .12);
+      --heart: #e4575f;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      background: var(--cream);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      line-height: 1.5;
+      transition: background .3s;
+      /* iOS App 化：禁长按放大镜复制菜单、避免整页橡皮筋滚动 */
+      -webkit-touch-callout: none;
+      overscroll-behavior-y: none;
+    }
+
+    button {
+      font-family: inherit;
+      border: none;
+      cursor: pointer;
+      background: none;
+      /* 消除移动端 300ms 点击延迟 & 双击缩放（iOS 10+ 忽略 user-scalable=no，靠此属性兜底） */
+      touch-action: manipulation;
+    }
+
+    ul {
+      list-style: none;
+    }
+
+    /* 桌面端居中限宽；同时适配 iPhone 异形屏安全区（刘海/灵动岛/Home 指示条）
+       --app-top：浏览器模式顶部内边距（standalone 横幅的负 margin 引用同一变量，保证严丝合缝） */
+    .app {
+      --app-top: 16px;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px 14px 40px;
+      padding-top: calc(var(--app-top) + env(safe-area-inset-top));
+      padding-bottom: calc(40px + env(safe-area-inset-bottom));
+      padding-left: max(14px, env(safe-area-inset-left));
+      padding-right: max(14px, env(safe-area-inset-right));
+    }
+
+    @media(min-width:520px) {
+      body {
+        background: #e9e0cf;
+      }
+
+      .app {
+        --app-top: 24px;
+      }
+    }
+
+    /* ---------- 顶部标题栏 ---------- */
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      flex: none;
+      background: linear-gradient(145deg, #f6e3b8, #e8c98a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #b3862e;
+      box-shadow: var(--shadow);
+    }
+
+    .titles h1 {
+      font-size: 20px;
+      letter-spacing: 1px;
+    }
+
+    .titles p {
+      font-size: 12px;
+      color: var(--ink-soft);
+    }
+
+    .top-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cloud {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--ink-soft);
+      background: var(--card);
+      border-radius: 20px;
+      padding: 6px 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .cloud i {
+      color: #7fa982;
+    }
+
+    /* 家长管理开关 */
+    .parent-switch {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: var(--ink-soft);
+      background: var(--card);
+      border-radius: 20px;
+      padding: 6px 10px;
+      box-shadow: var(--shadow);
+      user-select: none;
+    }
+
+    .toggle {
+      width: 38px;
+      height: 22px;
+      border-radius: 20px;
+      background: #ddd2bd;
+      position: relative;
+      transition: background .25s;
+      flex: none;
+    }
+
+    .toggle::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
+      transition: left .25s;
+    }
+
+    .parent-switch.on .toggle {
+      background: var(--theme);
+    }
+
+    .parent-switch.on .toggle::after {
+      left: 18px;
+    }
+
+    .parent-switch.on {
+      color: var(--theme);
+      font-weight: 600;
+    }
+
+    /* ---------- 通用卡片 ---------- */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .card-head h2 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .card-head .hint {
+      font-size: 11px;
+      color: var(--ink-soft);
+    }
+
+    /* ---------- 用户切换 ---------- */
+    .user-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .user-tab {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 10px 12px;
+      box-shadow: var(--shadow);
+      border: 2px solid transparent;
+      transition: border-color .25s, transform .15s;
+    }
+
+    .user-tab:active {
+      transform: scale(.97);
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 19px;
+      font-weight: 700;
+    }
+
+    .user-tab[data-user="zf"] .avatar {
+      background: linear-gradient(145deg, #5f9163, #46724a);
+    }
+
+    .user-tab[data-user="hr"] .avatar {
+      background: linear-gradient(145deg, #4d8bb5, #356b90);
+    }
+
+    .user-tab .u-name {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .user-tab .u-sub {
+      font-size: 11px;
+      color: var(--ink-soft);
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .user-tab .u-sub .heart {
+      color: var(--heart);
+    }
+
+    .user-tab.active[data-user="zf"] {
+      border-color: #4f7f52;
+    }
+
+    .user-tab.active[data-user="hr"] {
+      border-color: #3e7ca0;
+    }
+
+    /* ---------- 积分总览大卡 ---------- */
+    .score-hero {
+      position: relative;
+      overflow: hidden;
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+      background: linear-gradient(135deg, var(--theme), var(--theme-deep));
+      transition: background .3s;
+    }
+
+    .score-hero::before {
+      content: "";
+      position: absolute;
+      right: -40px;
+      top: -40px;
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .10);
+    }
+
+    .score-hero::after {
+      content: "";
+      position: absolute;
+      right: 30px;
+      bottom: -60px;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .07);
+    }
+
+    .hero-label {
+      font-size: 13px;
+      opacity: .9;
+      margin-bottom: 6px;
+      position: relative;
+    }
+
+    .hero-big {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+
+    .hero-big .num {
+      font-size: 52px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .hero-big .unit {
+      font-size: 20px;
+    }
+
+    .hero-vs {
+      position: absolute;
+      right: 20px;
+      top: 22px;
+      text-align: right;
+      z-index: 1;
+      max-width: 46%;
+    }
+
+    .hero-vs .vs-name {
+      font-size: 11px;
+      opacity: .85;
+      margin-bottom: 2px;
+      white-space: nowrap;
+    }
+
+    .hero-vs .vs-score {
+      font-size: 26px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .hero-vs .vs-score .unit {
+      font-size: 13px;
+      margin-left: 2px;
+    }
+
+    .hero-vs .vs-label {
+      font-size: 10px;
+      opacity: .7;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
+
+    /* ---------- 积分大比拼 ---------- */
+    .vs-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .vs-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .vs-row .who {
+      width: 84px;
+      font-size: 13px;
+      color: var(--ink);
+      flex: none;
+    }
+
+    .vs-row .who.me {
+      color: var(--theme);
+      font-weight: 700;
+    }
+
+    .bar {
+      flex: 1;
+      height: 12px;
+      border-radius: 10px;
+      background: var(--line);
+      overflow: hidden;
+    }
+
+    .bar>i {
+      display: block;
+      height: 100%;
+      border-radius: 10px;
+      width: 0;
+      transition: width .6s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .vs-row[data-user="zf"] .bar>i {
+      background: #5f9163;
+    }
+
+    .vs-row[data-user="hr"] .bar>i {
+      background: #4d8bb5;
+    }
+
+    .vs-row .val {
+      width: 44px;
+      text-align: right;
+      font-size: 14px;
+      font-weight: 700;
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 3px;
+    }
+
+    .vs-row .val .heart {
+      color: var(--heart);
+      font-size: 11px;
+    }
+
+    /* ---------- 任务 / 商品列表 ---------- */
+    .item-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fbf7ee;
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .item-ico {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      background: var(--theme-tint);
+      color: var(--theme);
+    }
+
+    .item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .item-info .n {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .item-info .p {
+      font-size: 12px;
+      color: var(--ink-soft);
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      margin-top: 2px;
+    }
+
+    .item-info .p .heart {
+      color: var(--heart);
+    }
+
+    /* 完成 / 兑换 按钮 */
+    .btn-do {
+      flex: none;
+      min-width: 64px;
+      padding: 9px 16px;
+      border-radius: 20px;
+      background: var(--theme);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      transition: transform .12s, opacity .2s, background .3s;
+    }
+
+    .btn-do:active {
+      transform: scale(.93);
+    }
+
+    .btn-do:disabled {
+      background: #d8cebb;
+      color: #fff;
+      cursor: not-allowed;
+    }
+
+    .btn-do.ghost {
+      background: transparent;
+      color: var(--theme);
+      border: 1.5px solid var(--theme);
+    }
+
+    .btn-do.ghost:disabled {
+      color: #b3a98f;
+      border-color: #d8cebb;
+    }
+
+    /* ---------- 积分明细 ---------- */
+    .record-list {
+      max-height: 340px;
+      overflow-y: auto;
+    }
+
+    .record {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 2px;
+      border-bottom: 1px dashed var(--line);
+    }
+
+    .record:last-child {
+      border-bottom: none;
+    }
+
+    .rec-ico {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .record.income .rec-ico {
+      background: #e8f1e6;
+      color: #5f9163;
+    }
+
+    .record.expense .rec-ico {
+      background: #fbe7e6;
+      color: #d5635c;
+    }
+
+    .record.adjust .rec-ico {
+      background: #fdf0d9;
+      color: #c9952c;
+    }
+
+    .rec-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .rec-main .r-name {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .rec-main .r-time {
+      font-size: 11px;
+      color: var(--ink-soft);
+      margin-top: 1px;
+    }
+
+    .rec-right {
+      text-align: right;
+      flex: none;
+    }
+
+    .rec-right .r-delta {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .record.income .r-delta {
+      color: #4f7f52;
+    }
+
+    .record.expense .r-delta {
+      color: #d5635c;
+    }
+
+    .record.adjust .r-delta {
+      color: #c9952c;
+    }
+
+    .rec-right .r-bal {
+      font-size: 11px;
+      color: var(--ink-soft);
+    }
+
+    .rec-del {
+      margin-left: 4px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      color: #c9817b;
+      background: #fbe7e6;
+      font-size: 12px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .parent-mode .rec-del {
+      display: flex;
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--ink-soft);
+      font-size: 13px;
+      padding: 24px 0;
+    }
+
+    .empty i {
+      display: block;
+      font-size: 30px;
+      margin-bottom: 8px;
+      color: #d9cdb4;
+    }
+
+    /* 家长模式：调整积分按钮 */
+    .admin-row {
+      display: none;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .parent-mode .admin-row {
+      display: flex;
+    }
+
+    .btn-admin {
+      flex: 1;
+      padding: 9px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--theme-tint);
+      color: var(--theme);
+    }
+
+    .btn-admin i {
+      margin-right: 4px;
+    }
+
+    /* ---------- Toast ---------- */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(60px + env(safe-area-inset-bottom));
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(60, 54, 44, .92);
+      color: #fff;
+      font-size: 14px;
+      padding: 11px 20px;
+      border-radius: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s, transform .25s;
+      z-index: 99;
+      max-width: 86%;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast i {
+      margin-right: 6px;
+    }
+
+    .toast.ok i {
+      color: #8fcf92;
+    }
+
+    .toast.warn i {
+      color: #f3c96d;
+    }
+
+    /* ---------- 家长调整积分弹层 ---------- */
+    .modal-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(50, 44, 34, .45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 24px;
+    }
+
+    .modal-mask.show {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 340px;
+      background: var(--card);
+      border-radius: 20px;
+      padding: 20px;
+    }
+
+    .modal h3 {
+      font-size: 17px;
+      margin-bottom: 4px;
+    }
+
+    .modal .m-sub {
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin-bottom: 14px;
+    }
+
+    .modal label {
+      font-size: 13px;
+      color: var(--ink-soft);
+      display: block;
+      margin: 10px 0 6px;
+    }
+
+    .modal input,
+    .modal select {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1.5px solid var(--line);
+      border-radius: 12px;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--ink);
+      background: #fbf7ee;
+      outline: none;
+    }
+
+    .modal input:focus,
+    .modal select:focus {
+      border-color: var(--theme);
+    }
+
+    .modal-btns {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .modal-btns button {
+      flex: 1;
+      padding: 11px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .btn-cancel {
+      background: #efe7d6;
+      color: var(--ink-soft);
+    }
+
+    .btn-confirm {
+      background: var(--theme);
+      color: #fff;
+    }
+
+    /* 数字动效 */
+    @keyframes pop {
+      0% {
+        transform: scale(1)
+      }
+
+      40% {
+        transform: scale(1.25)
+      }
+
+      100% {
+        transform: scale(1)
+      }
+    }
+
+    .pop {
+      animation: pop .35s ease;
+    }
+
+    /* ============================================================
+       iOS 独立窗口模式（已添加到主屏幕）
+       JS 检测 standalone 后给 body 加 .is-standalone 类：
+       顶栏延伸为主题色横幅，覆盖 black-translucent 状态栏区域，
+       状态栏白字落在主题色上，获得原生 App 沉浸感
+       ============================================================ */
+    body.is-standalone .topbar {
+      /* 向上顶到屏幕最顶端（抵消 .app 的 --app-top 顶部内边距，宽窄屏均严丝合缝） */
+      margin-top: calc(-1 * (var(--app-top, 16px) + env(safe-area-inset-top)));
+      margin-left: -14px;
+      margin-right: -14px;
+      /* 状态栏高度 + 标题行间距 */
+      padding: calc(10px + env(safe-area-inset-top)) 14px 14px;
+      background: linear-gradient(135deg, var(--theme), var(--theme-deep));
+      border-radius: 0 0 var(--radius) var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    body.is-standalone .titles h1,
+    body.is-standalone .titles p {
+      color: #fff;
+    }
+
+    body.is-standalone .titles p {
+      opacity: .85;
+    }
+
+    body.is-standalone .cloud,
+    body.is-standalone .parent-switch {
+      background: rgba(255, 255, 255, .16);
+      color: #fff;
+      box-shadow: none;
+    }
+
+    body.is-standalone .cloud i {
+      color: #cde8cd;
+    }
+
+    body.is-standalone .parent-switch.on {
+      color: #fff;
+    }
+
+    /* ---------- iOS「添加到主屏幕」引导条 ---------- */
+    .install-tip {
+      position: fixed;
+      left: max(14px, env(safe-area-inset-left));
+      right: max(14px, env(safe-area-inset-right));
+      bottom: calc(14px + env(safe-area-inset-bottom));
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card);
+      border: 1.5px solid #eadfc6;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(120, 100, 60, .18);
+      padding: 10px 12px;
+      z-index: 60;
+      font-size: 12px;
+      color: var(--ink);
+    }
+
+    .install-tip[hidden] {
+      display: none;
+    }
+
+    .install-tip .tip-ico {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      flex: none;
+      background: var(--theme-tint);
+      color: var(--theme);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .install-tip .tip-text {
+      flex: 1;
+      line-height: 1.5;
+    }
+
+    .install-tip .tip-text i {
+      color: var(--theme);
+    }
+
+    .install-tip .tip-close {
+      flex: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #f1e9d8;
+      color: var(--ink-soft);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+
+<body data-theme="green">
+  <div class="app">
+
+    <!-- 顶部标题栏 -->
+    <header class="topbar">
+      <div class="logo"><i class="fa-solid fa-medal"></i></div>
+      <div class="titles">
+        <h1>家庭积分乐园</h1>
+        <p>做任务赚积分 · 换奖励养习惯</p>
+      </div>
+      <div class="top-actions">
+        <span class="cloud"><i class="fa-solid fa-cloud"></i>本地同步</span>
+        <div class="parent-switch" id="parentSwitch" role="switch" aria-checked="false">
+          <span>家长管理</span>
+          <i class="toggle"></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- 用户切换栏 -->
+    <nav class="user-tabs" id="userTabs">
+      <button class="user-tab active" data-user="zf">
+        <span class="avatar">孚</span>
+        <span>
+          <span class="u-name">詹子孚</span>
+          <span class="u-sub"><span class="u-score">0</span><i class="fa-solid fa-heart heart"></i></span>
+        </span>
+      </button>
+      <button class="user-tab" data-user="hr">
+        <span class="avatar">若</span>
+        <span>
+          <span class="u-name">许怀若</span>
+          <span class="u-sub"><span class="u-score">0</span><i class="fa-solid fa-heart heart"></i></span>
+        </span>
+      </button>
+    </nav>
+
+    <!-- 积分总览大卡 -->
+    <section class="score-hero">
+      <div class="hero-label" id="heroName">詹子孚 的积分</div>
+      <div class="hero-big">
+        <span class="num" id="heroScore">0</span><span class="unit"><i class="fa-solid fa-heart"></i></span>
+      </div>
+      <div class="hero-vs">
+        <div class="vs-name" id="vsName">许怀若</div>
+        <div class="vs-score"><span id="vsScore">0</span><span class="unit"><i class="fa-solid fa-heart"></i></span>
+        </div>
+        <div class="vs-label">另一位小伙伴</div>
+      </div>
+    </section>
+
+    <!-- 积分大比拼 -->
+    <section class="card">
+      <div class="card-head">
+        <h2>积分大比拼</h2>
+        <span class="hint">一起进步 <i class="fa-solid fa-handshake-angle" style="color:#dcb86a"></i></span>
+      </div>
+      <div class="vs-row" data-user="zf">
+        <span class="who" data-who="zf">詹子孚</span>
+        <span class="bar"><i id="barZf"></i></span>
+        <span class="val"><span id="barValZf">0</span><i class="fa-solid fa-heart heart"></i></span>
+      </div>
+      <div class="vs-row" data-user="hr">
+        <span class="who" data-who="hr">许怀若</span>
+        <span class="bar"><i id="barHr"></i></span>
+        <span class="val"><span id="barValHr">0</span><i class="fa-solid fa-heart heart"></i></span>
+      </div>
+    </section>
+
+    <!-- 今日任务（赚积分） -->
+    <section class="card">
+      <div class="card-head">
+        <h2>今日任务</h2>
+        <span class="hint">做完点「完成」</span>
+      </div>
+      <div class="item-list" id="taskList"></div>
+      <div class="admin-row">
+        <button class="btn-admin" id="btnAdjust"><i class="fa-solid fa-sliders"></i>手动调整积分</button>
+      </div>
+    </section>
+
+    <!-- 奖励商店 -->
+    <section class="card">
+      <div class="card-head">
+        <h2>奖励商店</h2>
+        <span class="hint">攒够就能换</span>
+      </div>
+      <div class="item-list" id="shopList"></div>
+    </section>
+
+    <!-- 积分明细 -->
+    <section class="card" id="recordCard">
+      <div class="card-head">
+        <h2>积分明细</h2>
+        <span class="hint" id="recordHint">按时间倒序</span>
+      </div>
+      <div class="record-list" id="recordList"></div>
+    </section>
+
+  </div>
+
+  <!-- iOS「添加到主屏幕」引导条（JS 检测到 iPhone Safari 时自动显示） -->
+  <div class="install-tip" id="installTip" hidden>
+    <div class="tip-ico"><i class="fa-solid fa-mobile-screen-button"></i></div>
+    <div class="tip-text">把积分乐园装到主屏幕：点 Safari 底部「分享」<i class="fa-solid fa-arrow-up-from-bracket"></i> → 「添加到主屏幕」，即可像 App
+      一样全屏使用</div>
+    <button class="tip-close" id="tipClose"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <!-- Toast 提示 -->
+  <div class="toast" id="toast"></div>
+
+  <!-- 家长：手动调整积分弹层 -->
+  <div class="modal-mask" id="modalMask">
+    <div class="modal">
+      <h3>手动调整积分</h3>
+      <p class="m-sub" id="modalSub">为 詹子孚 调整积分（家长模式）</p>
+      <label>调整类型</label>
+      <select id="adjType">
+        <option value="add">增加积分</option>
+        <option value="minus">扣减积分</option>
+      </select>
+      <label>积分数量</label>
+      <input type="number" id="adjAmount" min="1" step="1" value="1" />
+      <label>事由备注</label>
+      <input type="text" id="adjReason" placeholder="如：额外奖励 / 修正记录" maxlength="20" />
+      <div class="modal-btns">
+        <button class="btn-cancel" id="adjCancel">取消</button>
+        <button class="btn-confirm" id="adjConfirm">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================================
+       一、可编辑配置区
+       👉 想修改积分分值、增删任务 / 奖励，直接改下面两个表即可
+       icon：Font Awesome 6 免费图标类名，如 fa-broom
+       ============================================================ */
+    const USERS = {
+      zf: {
+        name: '詹子孚',
+        theme: 'green',
+        themeColor: '#4f7f52',
+        themeDeep: '#3d6640',
+        tasks: [
+          { id: 'zf_t1', name: '扫地 & 吸地', score: 1, icon: 'fa-broom' },
+          { id: 'zf_t2', name: '做早饭', score: 2, icon: 'fa-mug-saucer' },
+          { id: 'zf_t3', name: '洗碗', score: 3, icon: 'fa-bowl-food' },
+          { id: 'zf_t4', name: '布置 & 收拾饭桌', score: 1, icon: 'fa-utensils' },
+          { id: 'zf_t5', name: '收拾客厅', score: 1, icon: 'fa-couch' },
+          { id: 'zf_t6', name: '保持寝室整洁一天', score: 1, icon: 'fa-bed' },
+          { id: 'zf_t7', name: '和弟弟和平相处一天', score: 1, icon: 'fa-people-roof' },
+          { id: 'zf_t8', name: '带弟弟玩耍（不打扰大人 / 不打闹）', score: 3, icon: 'fa-child-reaching' }
+        ],
+        rewards: [
+          { id: 'zf_r1', name: '植物大战僵尸（电脑版）一关卡', cost: 4, icon: 'fa-gamepad' },
+          { id: 'zf_r2', name: '兑换一元钱', cost: 5, icon: 'fa-coins' },
+          { id: 'zf_r3', name: 'switch day 时长延长 1 分钟', cost: 1, icon: 'fa-stopwatch' }
+        ]
+      },
+      hr: {
+        name: '许怀若',
+        theme: 'blue',
+        themeColor: '#3e7ca0',
+        themeDeep: '#2f6180',
+        tasks: [
+          { id: 'hr_t1', name: 'RAZ / Lingostar', score: 1, icon: 'fa-book-open' },
+          { id: 'hr_t2', name: '口算 + 数字描红', score: 1, icon: 'fa-square-root-variable' },
+          { id: 'hr_t3', name: '亲子阅读', score: 1, icon: 'fa-book-bookmark' },
+          { id: 'hr_t4', name: '自己收拾自己的玩具（一天）', score: 2, icon: 'fa-teddy-bear' }
+        ],
+        rewards: [
+          { id: 'hr_r1', name: '植物大战僵尸（电脑版）一关卡', cost: 6, icon: 'fa-gamepad' },
+          { id: 'hr_r2', name: '兑换一元钱', cost: 5, icon: 'fa-coins' },
+          { id: 'hr_r3', name: 'switch day 时长延长 1 分钟', cost: 1, icon: 'fa-stopwatch' }
+        ]
+      }
+    };
+
+    /* ============================================================
+       二、本地存储层（localStorage）
+       数据结构：{ zf:{score, records[]}, hr:{score, records[]}, current }
+       record: { id, type:'income'|'expense'|'adjust', name, delta, balance, time }
+       ============================================================ */
+    const STORE_KEY = 'familyScorePark_v1';
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) { /* 数据损坏时重置 */ }
+      return {
+        zf: { score: 0, records: [] },
+        hr: { score: 0, records: [] },
+        current: 'zf',
+        parentMode: false
+      };
+    }
+    let data = loadData();
+
+    function saveData() {
+      localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    }
+
+    /* ============================================================
+       三、状态与工具函数
+       ============================================================ */
+    let currentUser = data.current || 'zf';   // 当前选中用户
+    let parentMode = !!data.parentMode;       // 家长管理模式
+
+    const $ = sel => document.querySelector(sel);
+
+    function otherUser(id) { return id === 'zf' ? 'hr' : 'zf'; }
+
+    /* 生成一条积分流水 */
+    function addRecord(userKey, type, name, delta) {
+      const u = data[userKey];
+      u.score = Math.max(0, u.score + delta);  // 余额不允许为负
+      const rec = {
+        id: 'r_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        type, name, delta,
+        balance: u.score,
+        time: Date.now()
+      };
+      u.records.unshift(rec); // 最新在前
+      saveData();
+      return rec;
+    }
+
+    /* 格式化时间：MM-DD HH:mm */
+    function fmtTime(ts) {
+      const d = new Date(ts);
+      const p = n => String(n).padStart(2, '0');
+      return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+
+    /* Toast 轻提示 */
+    let toastTimer = null;
+    function toast(msg, type = 'ok') {
+      const el = $('#toast');
+      const icon = type === 'warn' ? 'fa-circle-exclamation' : 'fa-circle-check';
+      el.innerHTML = `<i class="fa-solid ${icon}"></i>${msg}`;
+      el.className = 'toast show ' + type;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+    }
+
+    /* ============================================================
+       四、渲染层
+       ============================================================ */
+
+    /* 应用主题色到 CSS 变量 */
+    function applyTheme(userKey) {
+      const cfg = USERS[userKey];
+      document.body.dataset.theme = cfg.theme;
+      document.documentElement.style.setProperty('--theme', cfg.themeColor);
+      document.documentElement.style.setProperty('--theme-deep', cfg.themeDeep);
+      document.documentElement.style.setProperty('--theme-tint', hexToRgba(cfg.themeColor, .12));
+      // 同步浏览器地址栏 / 系统状态栏主题色（Android Chrome、桌面 PWA 窗口）
+      const themeMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeMeta) themeMeta.setAttribute('content', cfg.themeColor);
+    }
+    function hexToRgba(hex, a) {
+      const n = parseInt(hex.slice(1), 16);
+      return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+    }
+
+    /* 顶部用户卡片积分 */
+    function renderUserTabs() {
+      document.querySelectorAll('.user-tab').forEach(tab => {
+        const k = tab.dataset.user;
+        tab.classList.toggle('active', k === currentUser);
+        tab.querySelector('.u-score').textContent = data[k].score;
+      });
+    }
+
+    /* 积分总览 + 大比拼 */
+    function renderScore() {
+      const me = data[currentUser], other = data[otherUser(currentUser)];
+      $('#heroName').textContent = USERS[currentUser].name + ' 的积分';
+      const hero = $('#heroScore');
+      hero.textContent = me.score;
+      $('#vsName').textContent = USERS[otherUser(currentUser)].name;
+      $('#vsScore').textContent = other.score;
+
+      $('#barValZf').textContent = data.zf.score;
+      $('#barValHr').textContent = data.hr.score;
+      const max = Math.max(data.zf.score, data.hr.score, 1); // 防除零
+      $('#barZf').style.width = (data.zf.score / max * 100) + '%';
+      $('#barHr').style.width = (data.hr.score / max * 100) + '%';
+
+      // 大比拼中标记“我”
+      document.querySelectorAll('.vs-row .who').forEach(w => {
+        const k = w.dataset.who;
+        w.textContent = USERS[k].name + (k === currentUser ? '（我）' : '');
+        w.classList.toggle('me', k === currentUser);
+      });
+    }
+
+    /* 今日任务列表 */
+    function renderTasks() {
+      const cfg = USERS[currentUser];
+      $('#taskList').innerHTML = cfg.tasks.map(t => `
+    <div class="item">
+      <div class="item-ico"><i class="fa-solid ${t.icon}"></i></div>
+      <div class="item-info">
+        <div class="n">${t.name}</div>
+        <div class="p">+${t.score} <i class="fa-solid fa-heart"></i></div>
+      </div>
+      <button class="btn-do" data-act="task" data-id="${t.id}">完成</button>
+    </div>
+  `).join('');
+    }
+
+    /* 奖励商店列表（积分不足按钮置灰） */
+    function renderShop() {
+      const cfg = USERS[currentUser];
+      const score = data[currentUser].score;
+      $('#shopList').innerHTML = cfg.rewards.map(r => {
+        const enough = score >= r.cost;
+        return `
+    <div class="item">
+      <div class="item-ico"><i class="fa-solid ${r.icon}"></i></div>
+      <div class="item-info">
+        <div class="n">${r.name}</div>
+        <div class="p">${r.cost} <i class="fa-solid fa-heart"></i></div>
+      </div>
+      <button class="btn-do ghost" data-act="reward" data-id="${r.id}" ${enough ? '' : 'disabled'}>
+        ${enough ? '兑换' : '积分不够'}
+      </button>
+    </div>`;
+      }).join('');
+    }
+
+    /* 积分明细（倒序） */
+    function renderRecords() {
+      const list = data[currentUser].records;
+      const box = $('#recordList');
+      if (list.length === 0) {
+        box.innerHTML = `<div class="empty"><i class="fa-solid fa-clipboard-list"></i>还没有积分记录，快去完成任务吧～</div>`;
+        return;
+      }
+      const icoMap = { income: 'fa-plus', expense: 'fa-minus', adjust: 'fa-sliders' };
+      const typeText = { income: '收入', expense: '兑换', adjust: '调整' };
+      box.innerHTML = list.map(r => {
+        const sign = r.delta >= 0 ? '+' : '';
+        return `
+    <div class="record ${r.type}">
+      <div class="rec-ico"><i class="fa-solid ${icoMap[r.type]}"></i></div>
+      <div class="rec-main">
+        <div class="r-name">${r.name}</div>
+        <div class="r-time">${fmtTime(r.time)} · ${typeText[r.type]}</div>
+      </div>
+      <div class="rec-right">
+        <div class="r-delta">${sign}${r.delta}</div>
+        <div class="r-bal">余额 ${r.balance}</div>
+      </div>
+      <button class="rec-del" data-act="delRecord" data-id="${r.id}" title="删除此记录"><i class="fa-solid fa-xmark"></i></button>
+    </div>`;
+      }).join('');
+    }
+
+    /* 家长模式视觉态 */
+    function renderParentMode() {
+      $('#parentSwitch').classList.toggle('on', parentMode);
+      document.body.classList.toggle('parent-mode', parentMode);
+    }
+
+    /* 整体刷新 */
+    function renderAll(popHero = false) {
+      applyTheme(currentUser);
+      renderUserTabs();
+      renderScore();
+      renderTasks();
+      renderShop();
+      renderRecords();
+      renderParentMode();
+      if (popHero) {
+        const h = $('#heroScore');
+        h.classList.remove('pop'); void h.offsetWidth; h.classList.add('pop');
+      }
+    }
+
+    /* ============================================================
+       五、业务交互（事件委托）
+       ============================================================ */
+    function findTask(id) { return USERS[currentUser].tasks.find(t => t.id === id); }
+    function findReward(id) { return USERS[currentUser].rewards.find(r => r.id === id); }
+
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('[data-act]');
+
+      /* —— 完成任务：加分 —— */
+      if (btn && btn.dataset.act === 'task') {
+        const t = findTask(btn.dataset.id);
+        if (!t) return;
+        addRecord(currentUser, 'income', t.name, t.score);
+        renderAll(true);
+        toast(`完成「${t.name}」 +${t.score} 分`);
+        return;
+      }
+
+      /* —— 兑换奖励：校验并扣分 —— */
+      if (btn && btn.dataset.act === 'reward') {
+        const r = findReward(btn.dataset.id);
+        if (!r) return;
+        if (data[currentUser].score < r.cost) {
+          toast('积分不够，再攒一攒吧～', 'warn');
+          return;
+        }
+        addRecord(currentUser, 'expense', '兑换：' + r.name, -r.cost);
+        renderAll(true);
+        toast(`兑换成功：${r.name}`, 'ok');
+        return;
+      }
+
+      /* —— 家长：删除单条记录（并回滚余额） —— */
+      if (btn && btn.dataset.act === 'delRecord') {
+        if (!parentMode) return;
+        const u = data[currentUser];
+        const idx = u.records.findIndex(x => x.id === btn.dataset.id);
+        if (idx === -1) return;
+        const rec = u.records[idx];
+        if (!confirm(`确定删除「${rec.name}」这条记录吗？\n该操作会同步回滚 ${rec.delta} 分。`)) return;
+        u.score = Math.max(0, u.score - rec.delta); // 反向回滚
+        u.records.splice(idx, 1);
+        saveData();
+        renderAll();
+        toast('记录已删除并回滚积分');
+        return;
+      }
+    });
+
+    /* —— 用户切换 —— */
+    $('#userTabs').addEventListener('click', e => {
+      const tab = e.target.closest('.user-tab');
+      if (!tab) return;
+      if (tab.dataset.user === currentUser) return;
+      currentUser = tab.dataset.user;
+      data.current = currentUser;
+      saveData();
+      renderAll();
+    });
+
+    /* —— 家长管理开关 —— */
+    $('#parentSwitch').addEventListener('click', () => {
+      // 开启家长模式时做一次简单确认，避免小朋友误入
+      if (!parentMode) {
+        const code = prompt('进入家长管理，请输入管理口令（提示：2024）：');
+        if (code !== '2024') { toast('口令不正确', 'warn'); return; }
+      }
+      parentMode = !parentMode;
+      data.parentMode = parentMode;
+      saveData();
+      renderParentMode();
+      toast(parentMode ? '家长管理已开启' : '家长管理已关闭');
+    });
+
+    /* ============================================================
+       六、家长手动调整积分弹层
+       ============================================================ */
+    const modal = $('#modalMask');
+    $('#btnAdjust').addEventListener('click', () => {
+      $('#modalSub').textContent = `为 ${USERS[currentUser].name} 调整积分（家长模式）`;
+      $('#adjAmount').value = 1;
+      $('#adjReason').value = '';
+      modal.classList.add('show');
+    });
+    $('#adjCancel').addEventListener('click', () => modal.classList.remove('show'));
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('show'); });
+    $('#adjConfirm').addEventListener('click', () => {
+      const amount = Math.floor(Number($('#adjAmount').value));
+      if (!amount || amount <= 0) { toast('请输入正确的积分数量', 'warn'); return; }
+      const isAdd = $('#adjType').value === 'add';
+      const reason = $('#adjReason').value.trim() || (isAdd ? '家长奖励' : '家长扣减');
+      if (!isAdd && amount > data[currentUser].score) {
+        toast('扣减数量不能超过当前积分', 'warn'); return;
+      }
+      const delta = isAdd ? amount : -amount;
+      addRecord(currentUser, 'adjust', reason, delta);
+      modal.classList.remove('show');
+      renderAll(true);
+      toast(`已${isAdd ? '增加' : '扣减'} ${amount} 分`);
+    });
+
+    /* ============================================================
+       七、PWA / iOS Web App 适配
+       ============================================================ */
+    /* 检测「已安装为独立窗口」→ body 加 .is-standalone（顶栏变主题色横幅）：
+       · navigator.standalone：iOS Safari 添加主屏后为 true（老/新系统通吃）
+       · display-mode:standalone：Chrome/Edge 安装 PWA 及 iOS 15.4+ 均匹配 */
+    (function () {
+      const mq = window.matchMedia('(display-mode: standalone)');
+      const sync = () => {
+        const on = window.navigator.standalone === true || mq.matches;
+        document.body.classList.toggle('is-standalone', on);
+      };
+      sync();
+      mq.addEventListener ? mq.addEventListener('change', sync) : mq.addListener(sync);
+    })();
+
+    /* iPhone Safari 引导「添加到主屏幕」（关闭一次后不再出现） */
+    (function () {
+      const tip = document.getElementById('installTip');
+      if (!tip) return;
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); /* iPadOS 伪装成 Mac */
+      const standalone = window.navigator.standalone === true
+        || window.matchMedia('(display-mode: standalone)').matches;
+      if (isIOS && !standalone && !localStorage.getItem('scorePark_tipClosed')) {
+        tip.hidden = false;
+      }
+      document.getElementById('tipClose').addEventListener('click', () => {
+        tip.hidden = true;
+        localStorage.setItem('scorePark_tipClosed', '1');
+      });
+    })();
+
+    /* 注册 Service Worker：安装后无网络也能打开（file:// 双击直开时自动跳过） */
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => { /* 注册失败不影响页面使用 */ });
+      });
+    }
+
+    /* ============================================================
+       八、启动
+       ============================================================ */
+    renderAll();
+  </script>
+</body>
+
+</html>
