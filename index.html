@@ -818,6 +818,10 @@
       color: #fff;
     }
 
+    .btn-confirm.danger {
+      background: #d5635c;
+    }
+
     /* 数字动效 */
     @keyframes pop {
       0% {
@@ -1074,6 +1078,32 @@
     </div>
   </div>
 
+  <!-- 家长：管理口令弹层（替代系统 prompt，iOS 主屏 App 模式下 prompt 可能静默失效） -->
+  <div class="modal-mask" id="codeMask">
+    <div class="modal">
+      <h3>家长管理</h3>
+      <p class="m-sub" id="codeSub">请输入管理口令</p>
+      <label>管理口令</label>
+      <input type="password" id="codeInput" inputmode="numeric" maxlength="10" placeholder="请输入口令" autocomplete="off" />
+      <div class="modal-btns">
+        <button class="btn-cancel" id="codeCancel">取消</button>
+        <button class="btn-confirm" id="codeConfirm">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 家长：删除记录确认弹层（替代系统 confirm） -->
+  <div class="modal-mask" id="delMask">
+    <div class="modal">
+      <h3>删除记录</h3>
+      <p class="m-sub" id="delMsg">确定删除这条记录吗？</p>
+      <div class="modal-btns">
+        <button class="btn-cancel" id="delCancel">取消</button>
+        <button class="btn-confirm danger" id="delConfirm">删除</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     /* ============================================================
        一、可编辑配置区
@@ -1120,6 +1150,9 @@
         ]
       }
     };
+
+    /* 家长管理口令（进入家长模式时验证，可自行修改） */
+    const PARENT_CODE = '2024';
 
     /* ============================================================
        二、本地存储层（localStorage）
@@ -1358,19 +1391,14 @@
         return;
       }
 
-      /* —— 家长：删除单条记录（并回滚余额） —— */
+      /* —— 家长：删除单条记录（弹层确认后回滚余额，弹层逻辑见第六节） —— */
       if (btn && btn.dataset.act === 'delRecord') {
         if (!parentMode) return;
-        const u = data[currentUser];
-        const idx = u.records.findIndex(x => x.id === btn.dataset.id);
-        if (idx === -1) return;
-        const rec = u.records[idx];
-        if (!confirm(`确定删除「${rec.name}」这条记录吗？\n该操作会同步回滚 ${rec.delta} 分。`)) return;
-        u.score = Math.max(0, u.score - rec.delta); // 反向回滚
-        u.records.splice(idx, 1);
-        saveData();
-        renderAll();
-        toast('记录已删除并回滚积分');
+        const rec = data[currentUser].records.find(x => x.id === btn.dataset.id);
+        if (!rec) return;
+        pendingDelId = rec.id;
+        $('#delMsg').textContent = `确定删除「${rec.name}」这条记录吗？该操作会同步回滚 ${rec.delta} 分。`;
+        delMask.classList.add('show');
         return;
       }
     });
@@ -1386,22 +1414,23 @@
       renderAll();
     });
 
-    /* —— 家长管理开关 —— */
+    /* —— 家长管理开关（开启需口令验证，弹层逻辑见第六节） —— */
     $('#parentSwitch').addEventListener('click', () => {
-      // 开启家长模式时做一次简单确认，避免小朋友误入
-      if (!parentMode) {
-        const code = prompt('进入家长管理，请输入管理口令（提示：2024）：');
-        if (code !== '2024') { toast('口令不正确', 'warn'); return; }
+      if (parentMode) {                 // 已开启 → 直接关闭
+        parentMode = false;
+        data.parentMode = false;
+        saveData();
+        renderParentMode();
+        toast('家长管理已关闭');
+      } else {                          // 未开启 → 弹层输入口令
+        openCodeMask();
       }
-      parentMode = !parentMode;
-      data.parentMode = parentMode;
-      saveData();
-      renderParentMode();
-      toast(parentMode ? '家长管理已开启' : '家长管理已关闭');
     });
 
     /* ============================================================
-       六、家长手动调整积分弹层
+       六、家长弹层（口令验证 / 手动调整 / 删除确认）
+       ⚠️ 不用系统 prompt/confirm：iOS 主屏 App（standalone）模式下
+       它们可能被系统静默拦截（返回 null/false），统一用页面内自定义弹层
        ============================================================ */
     const modal = $('#modalMask');
     $('#btnAdjust').addEventListener('click', () => {
@@ -1426,6 +1455,54 @@
       renderAll(true);
       toast(`已${isAdd ? '增加' : '扣减'} ${amount} 分`);
     });
+
+    /* —— 口令验证弹层（开启家长模式） —— */
+    const codeMask = $('#codeMask');
+    function openCodeMask() {
+      const input = $('#codeInput');
+      $('#codeSub').textContent = `请输入管理口令（提示：${PARENT_CODE}）`;
+      input.value = '';
+      codeMask.classList.add('show');
+      input.focus(); // 在点击手势内同步 focus，移动端才会自动弹出键盘
+    }
+    function closeCodeMask() { codeMask.classList.remove('show'); }
+    $('#codeCancel').addEventListener('click', closeCodeMask);
+    codeMask.addEventListener('click', e => { if (e.target === codeMask) closeCodeMask(); });
+    $('#codeConfirm').addEventListener('click', () => {
+      if ($('#codeInput').value !== PARENT_CODE) { toast('口令不正确', 'warn'); return; }
+      closeCodeMask();
+      parentMode = true;
+      data.parentMode = true;
+      saveData();
+      renderParentMode();
+      toast('家长管理已开启');
+    });
+    /* 输入框内按回车（iOS 键盘「go」）等同「确定」 */
+    $('#codeInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') $('#codeConfirm').click();
+    });
+
+    /* —— 删除记录确认弹层 —— */
+    const delMask = $('#delMask');
+    let pendingDelId = null; // 待删除的记录 id
+    function closeDelMask() { pendingDelId = null; delMask.classList.remove('show'); }
+    function doDeleteRecord() {
+      if (pendingDelId === null) { closeDelMask(); return; }
+      const u = data[currentUser];
+      const idx = u.records.findIndex(x => x.id === pendingDelId);
+      if (idx !== -1) {
+        const rec = u.records[idx];
+        u.score = Math.max(0, u.score - rec.delta); // 反向回滚
+        u.records.splice(idx, 1);
+        saveData();
+        renderAll();
+        toast('记录已删除并回滚积分');
+      }
+      closeDelMask();
+    }
+    $('#delConfirm').addEventListener('click', doDeleteRecord);
+    $('#delCancel').addEventListener('click', closeDelMask);
+    delMask.addEventListener('click', e => { if (e.target === delMask) closeDelMask(); });
 
     /* ============================================================
        七、PWA / iOS Web App 适配
