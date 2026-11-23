@@ -45,7 +45,7 @@
       --theme-deep: #3d6640;
       --theme-soft: #e8f1e6;
       --theme-tint: rgba(79, 127, 82, .12);
-      --heart: #e4575f;
+      --star: #f0b429;
     }
 
     * {
@@ -295,8 +295,8 @@
       gap: 3px;
     }
 
-    .user-tab .u-sub .heart {
-      color: var(--heart);
+    .user-tab .u-sub .star {
+      color: var(--star);
     }
 
     .user-tab.active[data-user="zf"] {
@@ -460,8 +460,8 @@
       gap: 3px;
     }
 
-    .vs-row .val .heart {
-      color: var(--heart);
+    .vs-row .val .star {
+      color: var(--star);
       font-size: 11px;
     }
 
@@ -513,8 +513,8 @@
       margin-top: 2px;
     }
 
-    .item-info .p .heart {
-      color: var(--heart);
+    .item-info .p .star {
+      color: var(--star);
     }
 
     /* 完成 / 兑换 按钮 */
@@ -970,14 +970,14 @@
         <span class="avatar">孚</span>
         <span>
           <span class="u-name">詹子孚</span>
-          <span class="u-sub"><span class="u-score">0</span><i class="fa-solid fa-heart heart"></i></span>
+          <span class="u-sub"><span class="u-score">0</span><i class="fa-solid fa-star star"></i></span>
         </span>
       </button>
       <button class="user-tab" data-user="hr">
         <span class="avatar">若</span>
         <span>
           <span class="u-name">许怀若</span>
-          <span class="u-sub"><span class="u-score">0</span><i class="fa-solid fa-heart heart"></i></span>
+          <span class="u-sub"><span class="u-score">0</span><i class="fa-solid fa-star star"></i></span>
         </span>
       </button>
     </nav>
@@ -986,11 +986,11 @@
     <section class="score-hero">
       <div class="hero-label" id="heroName">詹子孚 的积分</div>
       <div class="hero-big">
-        <span class="num" id="heroScore">0</span><span class="unit"><i class="fa-solid fa-heart"></i></span>
+        <span class="num" id="heroScore">0</span><span class="unit"><i class="fa-solid fa-star"></i></span>
       </div>
       <div class="hero-vs">
         <div class="vs-name" id="vsName">许怀若</div>
-        <div class="vs-score"><span id="vsScore">0</span><span class="unit"><i class="fa-solid fa-heart"></i></span>
+        <div class="vs-score"><span id="vsScore">0</span><span class="unit"><i class="fa-solid fa-star"></i></span>
         </div>
         <div class="vs-label">另一位小伙伴</div>
       </div>
@@ -1005,12 +1005,12 @@
       <div class="vs-row" data-user="zf">
         <span class="who" data-who="zf">詹子孚</span>
         <span class="bar"><i id="barZf"></i></span>
-        <span class="val"><span id="barValZf">0</span><i class="fa-solid fa-heart heart"></i></span>
+        <span class="val"><span id="barValZf">0</span><i class="fa-solid fa-star star"></i></span>
       </div>
       <div class="vs-row" data-user="hr">
         <span class="who" data-who="hr">许怀若</span>
         <span class="bar"><i id="barHr"></i></span>
-        <span class="val"><span id="barValHr">0</span><i class="fa-solid fa-heart heart"></i></span>
+        <span class="val"><span id="barValHr">0</span><i class="fa-solid fa-star star"></i></span>
       </div>
     </section>
 
@@ -1117,19 +1117,16 @@
         themeColor: '#4f7f52',
         themeDeep: '#3d6640',
         tasks: [
-          { id: 'zf_t1', name: '扫地 & 吸地', score: 1, icon: 'fa-broom' },
+          { id: 'zf_t1', name: '扫地/吸地', score: 1, icon: 'fa-broom' },
           { id: 'zf_t2', name: '做早饭', score: 2, icon: 'fa-mug-saucer' },
           { id: 'zf_t3', name: '洗碗', score: 3, icon: 'fa-bowl-food' },
-          { id: 'zf_t4', name: '布置 & 收拾饭桌', score: 1, icon: 'fa-utensils' },
-          { id: 'zf_t5', name: '收拾客厅', score: 1, icon: 'fa-couch' },
-          { id: 'zf_t6', name: '保持寝室整洁一天', score: 1, icon: 'fa-bed' },
-          { id: 'zf_t7', name: '和弟弟和平相处一天', score: 1, icon: 'fa-people-roof' },
-          { id: 'zf_t8', name: '带弟弟玩耍（不打扰大人 / 不打闹）', score: 3, icon: 'fa-child-reaching' }
+          { id: 'zf_t4', name: '布置&收拾饭桌', score: 1, icon: 'fa-utensils' },
+          { id: 'zf_t5', name: '保持寝室整洁1天', score: 1, icon: 'fa-bed' },
+          { id: 'zf_t6', name: '其它家务', score: 1, icon: 'fa-hands-bubbles' },
+          { id: 'zf_t7', name: '陪弟弟1小时', score: 3, icon: 'fa-child-reaching' }
         ],
         rewards: [
-          { id: 'zf_r1', name: '植物大战僵尸（电脑版）一关卡', cost: 4, icon: 'fa-gamepad' },
-          { id: 'zf_r2', name: '兑换一元钱', cost: 5, icon: 'fa-coins' },
-          { id: 'zf_r3', name: 'switch day 时长延长 1 分钟', cost: 1, icon: 'fa-stopwatch' }
+          { id: 'zf_r1', name: '游戏时间1分钟', cost: 1, icon: 'fa-stopwatch' }
         ]
       },
       hr: {
@@ -1138,15 +1135,19 @@
         themeColor: '#3e7ca0',
         themeDeep: '#2f6180',
         tasks: [
-          { id: 'hr_t1', name: 'RAZ / Lingostar', score: 1, icon: 'fa-book-open' },
-          { id: 'hr_t2', name: '口算 + 数字描红', score: 1, icon: 'fa-square-root-variable' },
-          { id: 'hr_t3', name: '亲子阅读', score: 1, icon: 'fa-book-bookmark' },
-          { id: 'hr_t4', name: '自己收拾自己的玩具（一天）', score: 2, icon: 'fa-teddy-bear' }
+          { id: 'hr_t1', name: '扫地/吸地', score: 1, icon: 'fa-broom' },
+          { id: 'hr_t2', name: '做早饭', score: 2, icon: 'fa-mug-saucer' },
+          { id: 'hr_t3', name: '洗碗', score: 3, icon: 'fa-bowl-food' },
+          { id: 'hr_t4', name: '布置&收拾饭桌', score: 1, icon: 'fa-utensils' },
+          { id: 'hr_t5', name: '其它家务', score: 1, icon: 'fa-hands-bubbles' },
+          { id: 'hr_t6', name: '保持寝室整洁1天', score: 1, icon: 'fa-bed' },
+          { id: 'hr_t7', name: '英语作业', score: 1, icon: 'fa-language' },
+          { id: 'hr_t8', name: '数学作业', score: 1, icon: 'fa-square-root-variable' },
+          { id: 'hr_t9', name: '语文作业', score: 1, icon: 'fa-pen-nib' },
+          { id: 'hr_t10', name: '主动要求做作业', score: 1, icon: 'fa-lightbulb' }
         ],
         rewards: [
-          { id: 'hr_r1', name: '植物大战僵尸（电脑版）一关卡', cost: 6, icon: 'fa-gamepad' },
-          { id: 'hr_r2', name: '兑换一元钱', cost: 5, icon: 'fa-coins' },
-          { id: 'hr_r3', name: 'switch day 时长延长 1 分钟', cost: 1, icon: 'fa-stopwatch' }
+          { id: 'hr_r1', name: '游戏时间1分钟', cost: 1, icon: 'fa-stopwatch' }
         ]
       }
     };
@@ -1159,7 +1160,7 @@
        数据结构：{ zf:{score, records[]}, hr:{score, records[]}, current }
        record: { id, type:'income'|'expense'|'adjust', name, delta, balance, time }
        ============================================================ */
-    const STORE_KEY = 'familyScorePark_v1';
+    const STORE_KEY = 'familyScorePark_v4';
 
     function loadData() {
       try {
@@ -1282,7 +1283,7 @@
       <div class="item-ico"><i class="fa-solid ${t.icon}"></i></div>
       <div class="item-info">
         <div class="n">${t.name}</div>
-        <div class="p">+${t.score} <i class="fa-solid fa-heart"></i></div>
+        <div class="p">+${t.score} <i class="fa-solid fa-star star"></i></div>
       </div>
       <button class="btn-do" data-act="task" data-id="${t.id}">完成</button>
     </div>
@@ -1300,7 +1301,7 @@
       <div class="item-ico"><i class="fa-solid ${r.icon}"></i></div>
       <div class="item-info">
         <div class="n">${r.name}</div>
-        <div class="p">${r.cost} <i class="fa-solid fa-heart"></i></div>
+        <div class="p">${r.cost} <i class="fa-solid fa-star star"></i></div>
       </div>
       <button class="btn-do ghost" data-act="reward" data-id="${r.id}" ${enough ? '' : 'disabled'}>
         ${enough ? '兑换' : '积分不够'}
